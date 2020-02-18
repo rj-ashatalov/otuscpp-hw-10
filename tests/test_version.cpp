@@ -2,7 +2,7 @@
 
 #include "../lib.h"
 #include <boost/test/unit_test.hpp>
-#include "Bulk.h"
+#include "Bulkmlt.h"
 
 BOOST_AUTO_TEST_SUITE(app_test_suite)
 

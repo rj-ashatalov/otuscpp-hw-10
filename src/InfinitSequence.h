@@ -6,7 +6,7 @@
 class InfinitSequence: public IInterpreterState
 {
     public:
-        InfinitSequence(Bulk& bulk);
+        InfinitSequence(Bulkmlt& bulkmlt);
         virtual void Initialize() override;
         virtual void Finalize() override;
         virtual void Exec(std::string ctx) override;

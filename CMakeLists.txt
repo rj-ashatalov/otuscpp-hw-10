@@ -5,7 +5,7 @@ function(add_executable_from_dir TARGET SRC_DIR)
     add_executable(${TARGET} ${TARGET_SRC})
 endfunction()
 
-project(bulk VERSION 0.0.$ENV{TRAVIS_BUILD_NUMBER})
+project(bulkmlt VERSION 0.0.$ENV{TRAVIS_BUILD_NUMBER})
 
 find_package(Threads REQUIRED)
 find_package(Boost COMPONENTS unit_test_framework REQUIRED)
@@ -14,7 +14,7 @@ configure_file(version.h.in ${PROJECT_SOURCE_DIR}/version.h)
 
 add_executable_from_dir(${PROJECT_NAME} src)
 
-add_executable(test_version tests/test_version.cpp src/Bulk.h)
+add_executable(test_version tests/test_version.cpp src/Bulkmlt.h)
 
 add_library(patch_version lib.cpp)
 

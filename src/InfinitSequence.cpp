@@ -1,10 +1,10 @@
 #include "InfinitSequence.h"
-#include "Bulk.h"
+#include "Bulkmlt.h"
 #include <iostream>
 #include <ctime>
 
-InfinitSequence::InfinitSequence(Bulk& bulk)
-        : IInterpreterState(bulk)
+InfinitSequence::InfinitSequence(Bulkmlt& bulkmlt)
+        : IInterpreterState(bulkmlt)
 {
 
 }
@@ -28,7 +28,7 @@ void InfinitSequence::Finalize()
         std::cout << __PRETTY_FUNCTION__ << " Expression complete" << std::endl;
         if (!_awaitFirstCommand)
         {
-            _bulk.eventSequenceComplete.Dispatch(*_rootGroup);
+            _bulkmlt.eventSequenceComplete.Dispatch(*_rootGroup);
         }
         _rootGroup = nullptr;
     }
@@ -41,7 +41,7 @@ void InfinitSequence::Exec(std::string ctx)
         auto group = std::make_shared<Group>();
         group->parent = _currentGroup;
         _currentGroup = group;
-        _bulk.SetState<InfinitSequence>();
+        _bulkmlt.SetState<InfinitSequence>();
         return;
     }
 
@@ -50,13 +50,13 @@ void InfinitSequence::Exec(std::string ctx)
         if (_currentGroup->parent == nullptr)
         {
             _currentGroup = nullptr;
-            _bulk.SetState<Sequence>();
+            _bulkmlt.SetState<Sequence>();
         }
         else
         {
             _currentGroup->parent->expressions.push_back(_currentGroup);
             _currentGroup = _currentGroup->parent;
-            _bulk.SetState<InfinitSequence>();
+            _bulkmlt.SetState<InfinitSequence>();
         }
         return;
     }
@@ -67,7 +67,7 @@ void InfinitSequence::Exec(std::string ctx)
     if (_awaitFirstCommand)
     {
         _awaitFirstCommand = false;
-        _bulk.eventFirstCommand.Dispatch(std::time(nullptr));
+        _bulkmlt.eventFirstCommand.Dispatch(std::time(nullptr));
     }
 }
 

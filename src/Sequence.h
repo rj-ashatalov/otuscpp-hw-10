@@ -6,7 +6,7 @@
 class Sequence: public IInterpreterState
 {
     public:
-        Sequence(Bulk& bulk);
+        Sequence(Bulkmlt& bulkmlt);
         virtual void Exec(std::string ctx) override;
         virtual void Initialize() override;
         virtual void Finalize() override;

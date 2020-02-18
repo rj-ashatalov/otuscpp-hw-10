@@ -11,9 +11,10 @@
 #include "InfinitSequence.h"
 #include "events/EventDispatcher.h"
 
+
 class Sequence;
 
-class Bulk
+class Bulkmlt
 {
     private:
         std::map<std::type_index, std::shared_ptr<IInterpreterState>> _typeToInterpreter;
@@ -23,7 +24,7 @@ class Bulk
         EventDispatcher<Group&> eventSequenceComplete;
         EventDispatcher<time_t> eventFirstCommand;
 
-        Bulk(int commandBufCount)
+        Bulkmlt(int commandBufCount)
                 : commandBufCount(commandBufCount)
         {
             SetState<Sequence>();

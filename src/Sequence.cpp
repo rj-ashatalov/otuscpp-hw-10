@@ -1,10 +1,10 @@
 #include "Sequence.h"
-#include "Bulk.h"
+#include "Bulkmlt.h"
 #include <iostream>
 #include <ctime>
 
-Sequence::Sequence(Bulk& bulk)
-        : IInterpreterState(bulk)
+Sequence::Sequence(Bulkmlt& bulkmlt)
+        : IInterpreterState(bulkmlt)
 {
 
 }
@@ -13,7 +13,7 @@ void Sequence::Exec(std::string ctx)
 {
     if (ctx == "{")
     {
-        _bulk.SetState<InfinitSequence>();
+        _bulkmlt.SetState<InfinitSequence>();
         return;
     }
 
@@ -23,12 +23,12 @@ void Sequence::Exec(std::string ctx)
 
     if (_commands.expressions.size() == 1)
     {
-        _bulk.eventFirstCommand.Dispatch(std::time(nullptr));
+        _bulkmlt.eventFirstCommand.Dispatch(std::time(nullptr));
     }
 
-    if (_commands.expressions.size() >= static_cast<size_t>(_bulk.commandBufCount))
+    if (_commands.expressions.size() >= static_cast<size_t>(_bulkmlt.commandBufCount))
     {
-        _bulk.SetState<Sequence>();
+        _bulkmlt.SetState<Sequence>();
     }
 }
 
@@ -44,7 +44,7 @@ void Sequence::Finalize()
     IInterpreterState::Finalize();
     if (_commands.expressions.size() > 0)
     {
-        _bulk.eventSequenceComplete.Dispatch(_commands);
+        _bulkmlt.eventSequenceComplete.Dispatch(_commands);
     }
 }
 

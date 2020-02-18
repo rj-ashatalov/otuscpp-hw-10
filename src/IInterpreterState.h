@@ -5,13 +5,13 @@
 #include <vector>
 #include <memory>
 
-class Bulk;
+class Bulkmlt;
 
 class IInterpreterState
 {
     public:
-        IInterpreterState(Bulk& bulk)
-                : _bulk(bulk)
+        IInterpreterState(Bulkmlt& bulkmlt)
+                : _bulkmlt(bulkmlt)
         {
         }
 
@@ -24,7 +24,7 @@ class IInterpreterState
         virtual void Finalize() {};
 
     protected:
-        Bulk& _bulk;
+        Bulkmlt& _bulkmlt;
 };
 
 
