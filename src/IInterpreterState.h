@@ -35,6 +35,7 @@ struct IExpression
     }
 
     virtual operator std::string() const = 0;
+    virtual int Size() const = 0;
 };
 
 struct Command: public IExpression
@@ -44,6 +45,11 @@ struct Command: public IExpression
     virtual operator std::string() const override
     {
         return value;
+    }
+
+    virtual int Size() const override
+    {
+        return 1;
     }
 };
 
@@ -55,5 +61,15 @@ struct Group: public IExpression
     virtual operator std::string() const override
     {
         return Utils::Join(expressions, ", ");
+    }
+
+    virtual int Size() const override
+    {
+        int result = 0;
+        for (auto&& expression : expressions)
+        {
+            result += expression->Size();
+        }
+        return result;
     }
 };

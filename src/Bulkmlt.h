@@ -14,12 +14,21 @@
 
 class Sequence;
 
+struct Metrics
+{
+    int lineCount = 0u;
+    int commandCount = 0u;
+    int blockCount = 0u;
+};
+
 class Bulkmlt
 {
     private:
         std::map<std::type_index, std::shared_ptr<IInterpreterState>> _typeToInterpreter;
 
     public:
+
+        Metrics mainMetrics;
 
         EventDispatcher<Group&> eventSequenceComplete;
         EventDispatcher<time_t> eventFirstCommand;
@@ -71,6 +80,7 @@ class Bulkmlt
                 }
                 std::cout << "Input is: " << command << " Processing... " << std::endl;
                 _currentState->Exec(command);
+                mainMetrics.lineCount++;
             }
             std::cout << "Input complete aborting" << std::endl;
         };
