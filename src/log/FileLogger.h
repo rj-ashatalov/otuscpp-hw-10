@@ -8,7 +8,7 @@ struct FileLogger
         struct File
         {
             std::string name;
-            std::string content;
+            std::shared_ptr<Group> content;
         };
 
         void PrepareFilename(std::string fileName)
@@ -26,7 +26,7 @@ struct FileLogger
 
             std::cout << __PRETTY_FUNCTION__ << " Creating file: " << file.name << std::endl;
             std::ofstream fileStream(file.name + ".log");
-            fileStream << file.content << std::endl;
+            fileStream << Utils::Join(file.content->expressions, "\n") << std::endl;
             fileStream.close();
         };
 
@@ -34,6 +34,7 @@ struct FileLogger
         {
             return _fileName;
         }
+
     private:
         std::string _fileName = "";
 };

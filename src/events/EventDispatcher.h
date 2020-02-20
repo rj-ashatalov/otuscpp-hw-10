@@ -35,7 +35,7 @@ class EventDispatcher
         {
             for (auto& subscription: _subscriptionList)
             {
-                subscription->handler(std::forward<Args>(args)...);
+                subscription->handler(args...);
             }
         };
     private:

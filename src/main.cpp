@@ -24,10 +24,10 @@ bool logNotified = false;
 bool fileNotified = false;
 bool isDone = false;
 
-std::queue<std::string> loggerQueue;
+std::queue<std::shared_ptr<Group>> loggerQueue;
 std::queue<FileLogger::File> fileQueue;
 
-void FileLogging(FileLogger& fileLogger)
+void FileLogging(FileLogger& fileLogger, Metrics& fileMetrics)
 {
     {
         std::unique_lock<std::mutex> locker(lockPrint);
@@ -44,7 +44,16 @@ void FileLogging(FileLogger& fileLogger)
         while (!fileQueue.empty())
         {
             std::unique_lock<std::mutex> locker(lockFileWrite);
-            fileLogger.Log(fileQueue.front());
+            if (fileQueue.empty())
+            {
+                break;
+            }
+
+            const auto& file = fileQueue.front();
+            fileMetrics.blockCount++;
+            fileMetrics.commandCount += file.content->Size();
+
+            fileLogger.Log(file);
             fileQueue.pop();
         }
         fileNotified = false;
@@ -56,6 +65,7 @@ int main(int, char const* argv[])
 {
     Bulkmlt bulkmlt{atoi(argv[1])};
 
+    Metrics logMetrics;
     std::thread log([&]()
     {
         {
@@ -74,30 +84,36 @@ int main(int, char const* argv[])
             while (!loggerQueue.empty())
             {
                 std::unique_lock<std::mutex> locker(lockPrint);
-                consoleLogger.Log(loggerQueue.front());
+                if (loggerQueue.empty())
+                {
+                    break;
+                }
+
+                const auto& content = loggerQueue.front();
+                logMetrics.blockCount++;
+                logMetrics.commandCount += content->Size();
+
+                consoleLogger.Log("bulkmlt: " + static_cast<std::string>(*content));
                 loggerQueue.pop();
             }
             logNotified = false;
         }
     });
 
+    Metrics fileMetrics;
     FileLogger fileLogger;
-    std::thread file1(FileLogging, std::ref(fileLogger));
-    std::thread file2(FileLogging, std::ref(fileLogger));
+    std::thread file1(FileLogging, std::ref(fileLogger), std::ref(fileMetrics));
+    std::thread file2(FileLogging, std::ref(fileLogger), std::ref(fileMetrics));
 
     bulkmlt.eventSequenceComplete.Subscribe([&](auto&& group)
     {
         bulkmlt.mainMetrics.blockCount++;
-        bulkmlt.mainMetrics.commandCount += group.Size();
+        bulkmlt.mainMetrics.commandCount += group->Size();
     });
 
-    Metrics logMetrics;
     bulkmlt.eventSequenceComplete.Subscribe([&](auto&& group)
     {
-        logMetrics.blockCount++;
-        logMetrics.commandCount += group.Size();
-
-        loggerQueue.push("bulkmlt: " + static_cast<std::string>(group));
+        loggerQueue.push(group);
         logNotified = true;
         threadLogCheck.notify_one();
     });
@@ -109,13 +125,9 @@ int main(int, char const* argv[])
         fileLogger.PrepareFilename("bulkmlt" + currentTime.str());
     });
 
-    Metrics fileMetrics;
     bulkmlt.eventSequenceComplete.Subscribe([&](auto&& group)
     {
-        fileMetrics.blockCount++;
-        fileMetrics.commandCount += group.Size();
-
-        FileLogger::File file{fileLogger.GetFileName(), Utils::Join(group.expressions, "\n")};
+        FileLogger::File file{fileLogger.GetFileName(), group};
         fileQueue.push(std::move(file));
         fileNotified = true;
         threadFileCheck.notify_all();

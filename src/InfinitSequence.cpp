@@ -28,7 +28,7 @@ void InfinitSequence::Finalize()
         std::cout << __PRETTY_FUNCTION__ << " Expression complete" << std::endl;
         if (!_awaitFirstCommand)
         {
-            _bulkmlt.eventSequenceComplete.Dispatch(*_rootGroup);
+            _bulkmlt.eventSequenceComplete.Dispatch(_rootGroup);
         }
         _rootGroup = nullptr;
     }

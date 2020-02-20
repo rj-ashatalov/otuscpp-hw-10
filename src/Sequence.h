@@ -12,5 +12,5 @@ class Sequence: public IInterpreterState
         virtual void Finalize() override;
 
     private:
-        Group _commands;
+        std::shared_ptr<Group> _commands = std::make_shared<Group>();
 };

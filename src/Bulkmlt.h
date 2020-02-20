@@ -30,7 +30,7 @@ class Bulkmlt
 
         Metrics mainMetrics;
 
-        EventDispatcher<Group&> eventSequenceComplete;
+        EventDispatcher<std::shared_ptr<Group>> eventSequenceComplete;
         EventDispatcher<time_t> eventFirstCommand;
 
         Bulkmlt(int commandBufCount)
