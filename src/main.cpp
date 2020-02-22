@@ -11,17 +11,17 @@
 #include <functional>
 #include <condition_variable>
 
+std::mutex lockAppendMessage;
+std::mutex lockAppendFile;
+
 std::mutex lockPrint;
 std::mutex lockLoggerQueue;
 
-std::mutex lockFileWrite;
 std::mutex lockFileQueue;
 
 std::condition_variable threadLogCheck;
 std::condition_variable threadFileCheck;
 
-bool logNotified = false;
-bool fileNotified = false;
 bool isDone = false;
 
 std::queue<std::shared_ptr<Group>> loggerQueue;
@@ -36,9 +36,43 @@ void FileLogging(FileLogger& fileLogger, Metrics& fileMetrics)
     while (!isDone)
     {
         std::unique_lock<std::mutex> locker(lockFileQueue);
+        threadFileCheck.wait(locker, [&]()
+        {
+            return !fileQueue.empty() || isDone;
+        });
+
+        if (!fileQueue.empty())
+        {
+            auto file = std::move(fileQueue.front());
+            fileQueue.pop();
+
+            fileMetrics.blockCount++;
+            fileMetrics.commandCount += file.content->Size();
+
+            fileLogger.Log(file);
+        }
+    }
+
+    {
+        std::unique_lock<std::mutex> locker(lockPrint);
+        std::cout << __PRETTY_FUNCTION__ << " Complete" << std::endl;
+    }
+}
+
+/*void Worker()
+{
+    {
+        std::unique_lock<std::mutex> locker(lockPrint);
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    }
+    while (!isDone)
+    {
+        std::unique_lock<std::mutex> locker(lockFileQueue);
         while (!fileNotified)
         {
-            threadFileCheck.wait(locker);
+            threadFileCheck.wait(locker, [&](){
+                return false;
+            });
         }
 
         while (!fileQueue.empty())
@@ -63,7 +97,8 @@ void FileLogging(FileLogger& fileLogger, Metrics& fileMetrics)
         std::unique_lock<std::mutex> locker(lockPrint);
         std::cout << __PRETTY_FUNCTION__ << " Complete"<< std::endl;
     }
-}
+
+}*/
 
 //! Main app function
 int main(int, char const* argv[])
@@ -81,32 +116,25 @@ int main(int, char const* argv[])
         while (!isDone)
         {
             std::unique_lock<std::mutex> locker(lockLoggerQueue);
-            while (!logNotified)
+            threadLogCheck.wait(locker, [&]()
             {
-                threadLogCheck.wait(locker);
-            }
+                return !loggerQueue.empty() || isDone;
+            });
 
-            while (!loggerQueue.empty())
+            if (!loggerQueue.empty())
             {
-                std::unique_lock<std::mutex> locker(lockPrint);
-                if (loggerQueue.empty())
-                {
-                    break;
-                }
+                auto content = std::move(loggerQueue.front());
+                loggerQueue.pop();
 
-                const auto& content = loggerQueue.front();
                 logMetrics.blockCount++;
                 logMetrics.commandCount += content->Size();
-
                 consoleLogger.Log("bulkmlt: " + static_cast<std::string>(*content));
-                loggerQueue.pop();
             }
-            logNotified = false;
         }
 
         {
             std::unique_lock<std::mutex> locker(lockPrint);
-            std::cout << __PRETTY_FUNCTION__ << " Complete"<< std::endl;
+            std::cout << __PRETTY_FUNCTION__ << " Complete" << std::endl;
         }
     });
 
@@ -125,24 +153,30 @@ int main(int, char const* argv[])
 
     bulkmlt.eventSequenceComplete.Subscribe([&](auto&& group)
     {
-        loggerQueue.push(group);
-        logNotified = true;
+        {
+            std::lock_guard<std::mutex> lock(lockAppendMessage);
+            loggerQueue.push(group);
+        }
         threadLogCheck.notify_one();
     });
 
     bulkmlt.eventFirstCommand.Subscribe([&](auto&& timestamp)
     {
+        std::lock_guard<std::mutex> lock(lockAppendFile);
+
         std::stringstream currentTime;
-        currentTime << timestamp;
+        currentTime << timestamp << "_" << std::to_string(bulkmlt.mainMetrics.lineCount);
         fileLogger.PrepareFilename("bulkmlt" + currentTime.str());
     });
 
     bulkmlt.eventSequenceComplete.Subscribe([&](auto&& group)
     {
-        FileLogger::File file{fileLogger.GetFileName(), group};
-        fileQueue.push(std::move(file));
-        fileNotified = true;
-        threadFileCheck.notify_all();
+        {
+            std::lock_guard<std::mutex> lock(lockAppendFile);
+            FileLogger::File file{fileLogger.GetFileName(), group};
+            fileQueue.push(std::move(file));
+        }
+        threadFileCheck.notify_one();
     });
 
     bulkmlt.Run();
@@ -150,6 +184,7 @@ int main(int, char const* argv[])
     isDone = true;
     threadLogCheck.notify_all();
     threadFileCheck.notify_all();
+
     log.join();
     file1.join();
     file2.join();

@@ -70,7 +70,7 @@ class Bulkmlt
 //            std::cout << __PRETTY_FUNCTION__ << std::endl;
             while (true)
             {
-//                std::cout << "Waiting for input:" << std::endl;
+                std::cout << "Waiting for input:" << std::endl;
                 std::string command;
                 std::getline(std::cin, command);
                 if (std::cin.eof())
@@ -78,11 +78,11 @@ class Bulkmlt
                     _currentState->Finalize();
                     break;
                 }
-//                std::cout << "Input is: " << command << " Processing... " << std::endl;
+                std::cout << "Input is: " << command << " Processing... " << std::endl;
                 _currentState->Exec(command);
                 mainMetrics.lineCount++;
             }
-//            std::cout << "Input complete aborting" << std::endl;
+            std::cout << "Input complete aborting" << std::endl;
         };
 
         int commandBufCount;
