@@ -58,6 +58,11 @@ void FileLogging(FileLogger& fileLogger, Metrics& fileMetrics)
         }
         fileNotified = false;
     }
+
+    {
+        std::unique_lock<std::mutex> locker(lockPrint);
+        std::cout << __PRETTY_FUNCTION__ << " Complete"<< std::endl;
+    }
 }
 
 //! Main app function
@@ -98,12 +103,19 @@ int main(int, char const* argv[])
             }
             logNotified = false;
         }
+
+        {
+            std::unique_lock<std::mutex> locker(lockPrint);
+            std::cout << __PRETTY_FUNCTION__ << " Complete"<< std::endl;
+        }
     });
 
-    Metrics fileMetrics;
     FileLogger fileLogger;
-    std::thread file1(FileLogging, std::ref(fileLogger), std::ref(fileMetrics));
-    std::thread file2(FileLogging, std::ref(fileLogger), std::ref(fileMetrics));
+    Metrics fileMetricsOne;
+    std::thread file1(FileLogging, std::ref(fileLogger), std::ref(fileMetricsOne));
+
+    Metrics fileMetricsTwo;
+    std::thread file2(FileLogging, std::ref(fileLogger), std::ref(fileMetricsTwo));
 
     bulkmlt.eventSequenceComplete.Subscribe([&](auto&& group)
     {
@@ -136,8 +148,24 @@ int main(int, char const* argv[])
     bulkmlt.Run();
 
     isDone = true;
+    threadLogCheck.notify_all();
+    threadFileCheck.notify_all();
     log.join();
     file1.join();
     file2.join();
+
+    std::cout << "main поток - " << bulkmlt.mainMetrics.lineCount << " строк, "
+              << bulkmlt.mainMetrics.commandCount << " команд, "
+              << bulkmlt.mainMetrics.blockCount << " блок" << std::endl;
+
+    std::cout << "log поток - " << logMetrics.blockCount << " блок, "
+              << logMetrics.commandCount << " команд, " << std::endl;
+
+    std::cout << "file1 поток - " << fileMetricsOne.blockCount << " блок, "
+              << fileMetricsOne.commandCount << " команд, " << std::endl;
+
+    std::cout << "file2 поток - " << fileMetricsTwo.blockCount << " блок, "
+              << fileMetricsTwo.commandCount << " команд, " << std::endl;
+
     return 0;
 }
