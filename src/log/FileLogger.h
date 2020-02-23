@@ -17,20 +17,20 @@ struct FileLogger
             _fileName = fileName;
         };
 
-        void Log(File file)
+        void Log(const std::string& fileName, const std::shared_ptr<Group> group)
         {
-            if (file.name == "")
+            if (fileName == "")
             {
                 return;
             }
 
-            std::cout << __PRETTY_FUNCTION__ << " Creating file: " << file.name << std::endl;
-            std::ofstream fileStream(file.name + ".log");
-            fileStream << Utils::Join(file.content->expressions, "\n") << std::endl;
+            std::cout << __PRETTY_FUNCTION__ << " Creating file: " << fileName << std::endl;
+            std::ofstream fileStream(fileName + ".log");
+            fileStream << Utils::Join(group->expressions, "\n") << std::endl;
             fileStream.close();
         };
 
-        std::string& GetFileName()
+        std::string GetFileName()
         {
             return _fileName;
         }
