@@ -72,4 +72,38 @@ struct Group: public IExpression
         }
         return result;
     }
+
+    std::vector<std::shared_ptr<Command>> Merge()
+    {
+        std::vector<std::shared_ptr<Command>> result{};
+        if (expressions.size() > 0)
+        {
+            Concat(result, expressions);
+        }
+        return result;
+    }
+
+    private:
+        void Concat(std::vector<std::shared_ptr<Command>>& dest, std::vector<std::shared_ptr<IExpression>>& src)
+        {
+            if (src.size() <= 0)
+            {
+                return;
+            }
+
+            std::for_each(src.begin(), src.end(), [&dest, this](auto& item)
+            {
+                auto command = std::dynamic_pointer_cast<Command>(item);
+                if (command)
+                {
+                    dest.push_back(command);
+                }
+
+                auto group = std::dynamic_pointer_cast<Group>(item);
+                if (group)
+                {
+                    Concat(dest, group->expressions);
+                }
+            });
+        }
 };

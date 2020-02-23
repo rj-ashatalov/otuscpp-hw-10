@@ -26,7 +26,13 @@ struct FileLogger
 
             std::cout << __PRETTY_FUNCTION__ << " Creating file: " << fileName << std::endl;
             std::ofstream fileStream(fileName + ".log");
-            fileStream << Utils::Join(group->expressions, "\n") << std::endl;
+
+            auto commands = group->Merge();
+            std::for_each(commands.begin(), commands.end(), [&fileStream](auto& item)
+            {
+                fileStream << Utils::FibonacciNaive(std::stoi(item->value)) << "\n";
+            });
+            fileStream << std::endl;
             fileStream.close();
         };
 

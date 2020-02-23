@@ -5,7 +5,6 @@
 #include "log/FileLogger.h"
 #include <ctime>
 #include <queue>
-#include "IInterpreterState.h"
 #include <thread>
 #include <mutex>
 #include <functional>
@@ -104,7 +103,18 @@ int main(int, char const* argv[])
             {
                 logMetrics.blockCount++;
                 logMetrics.commandCount += group->Size();
-                consoleLogger.Log("bulkmlt: " + static_cast<std::string>(*group));
+
+                auto commands = group->Merge();
+
+                std::stringstream output;
+                std::for_each(commands.begin(), std::prev(commands.end()), [&output](auto& item)
+                {
+                    output << Utils::FactorialNaive(std::stoi(item->value)) << ", ";
+                });
+
+                output << Utils::FactorialNaive(std::stoi(commands.back()->value));
+
+                consoleLogger.Log("bulkmlt: " + output.str());
             }, group));
         }
         threadLogCheck.notify_one();

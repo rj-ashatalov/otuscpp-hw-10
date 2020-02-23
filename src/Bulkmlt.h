@@ -6,7 +6,6 @@
 #include <typeindex>
 #include <queue>
 #include <zconf.h>
-#include "IInterpreterState.h"
 #include "Sequence.h"
 #include "InfinitSequence.h"
 #include "events/EventDispatcher.h"
