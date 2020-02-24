@@ -38,44 +38,6 @@ namespace Utils
         return output.str();
     }
 
-/*    template<class T, class V>
-    void Concat(std::vector<T>& dest, const V& src)
-    {
-//        dest.push_back(src);
-    }
-
-    template<class T>
-    void Concat(std::vector<T>& dest, const T& src)
-    {
-        dest.push_back(src);
-    }
-
-    template<class T, class V>
-    void Concat(std::vector<T>& dest, const std::vector<V>& src)
-    {
-        if (src.size() <= 0)
-        {
-            return;
-        }
-
-        std::for_each(src.begin(), src.end(), [&dest](auto& item)
-        {
-            Concat(dest, item);
-        });
-    }
-
-    template<class T, class Rv>
-    std::vector<Rv> Merge(std::vector<T> container)
-    {
-        std::vector<Rv> result{};
-        if (container.size() > 0)
-        {
-            Concat(result, container);
-        }
-
-        return result;
-    }*/
-
-    int FibonacciNaive(const size_t value);
-    int FactorialNaive(size_t value);
+    size_t FibonacciNaive(const size_t value);
+    size_t FactorialNaive(size_t value);
 }
