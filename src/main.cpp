@@ -11,9 +11,6 @@
 #include <condition_variable>
 #include <future>
 
-std::mutex lockAppendMessage;
-std::mutex lockAppendFile;
-
 std::mutex lockPrint;
 std::mutex lockLoggerQueue;
 
@@ -41,7 +38,7 @@ void FileLogWorker(Metrics& fileMetrics)
             return !fileQueue.empty() || isDone;
         });
 
-        while (!fileQueue.empty())
+        if (!fileQueue.empty())
         {
             auto file = std::move(fileQueue.front());
             fileQueue.pop();
@@ -72,7 +69,7 @@ int main(int, char const* argv[])
                 return !loggerQueue.empty() || isDone;
             });
 
-            while (!loggerQueue.empty())
+            if (!loggerQueue.empty())
             {
                 auto content = std::move(loggerQueue.front());
                 loggerQueue.pop();
@@ -98,7 +95,7 @@ int main(int, char const* argv[])
     bulkmlt.eventSequenceComplete.Subscribe([&](auto&& group)
     {
         {
-            std::lock_guard<std::mutex> lock(lockAppendMessage);
+            std::lock_guard<std::mutex> lock(lockLoggerQueue);
             loggerQueue.emplace(std::async(std::launch::deferred, [&](const auto& group)
             {
                 logMetrics.blockCount++;
@@ -122,7 +119,7 @@ int main(int, char const* argv[])
 
     bulkmlt.eventFirstCommand.Subscribe([&](auto&& timestamp)
     {
-        std::lock_guard<std::mutex> lock(lockAppendFile);
+        std::lock_guard<std::mutex> lock(lockFileQueue);
 
         std::stringstream currentTime;
         currentTime << timestamp << "_" << std::to_string(bulkmlt.mainMetrics.lineCount);
@@ -132,7 +129,7 @@ int main(int, char const* argv[])
     bulkmlt.eventSequenceComplete.Subscribe([&](auto&& group)
     {
         {
-            std::lock_guard<std::mutex> lock(lockAppendFile);
+            std::lock_guard<std::mutex> lock(lockFileQueue);
             fileQueue.emplace(std::async(std::launch::deferred, [&](const auto& filename, const auto& content)->int
             {
                 fileLogger.Log(filename, content);
