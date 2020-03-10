@@ -2,6 +2,8 @@
 
 #include <string>
 #include <fstream>
+#include <mutex>
+#include "utils/utils.h"
 
 struct FileLogger
 {
@@ -13,7 +15,10 @@ struct FileLogger
 
         void PrepareFilename(std::string fileName)
         {
-            std::cout << __PRETTY_FUNCTION__ << std::endl;
+            {
+                std::unique_lock<std::mutex> locker(Utils::lockPrint);
+                std::cout << __PRETTY_FUNCTION__ << std::endl;
+            }
             _fileName = fileName;
         };
 
@@ -24,9 +29,12 @@ struct FileLogger
                 return;
             }
 
-            std::cout << __PRETTY_FUNCTION__ << " Creating file: " << fileName << std::endl;
-            std::ofstream fileStream(fileName + ".log");
+            {
+                std::unique_lock<std::mutex> locker(Utils::lockPrint);
+                std::cout << __PRETTY_FUNCTION__ << " Creating file: " << fileName << std::endl;
+            }
 
+            std::ofstream fileStream(fileName + ".log");
             auto commands = group->Merge();
             std::for_each(commands.begin(), commands.end(), [&fileStream](auto& item)
             {

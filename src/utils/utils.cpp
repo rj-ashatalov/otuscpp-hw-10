@@ -2,6 +2,8 @@
 
 namespace Utils
 {
+    std::mutex lockPrint;
+
     size_t FibonacciNaive(const size_t value)
     {
         if (value <= 2)

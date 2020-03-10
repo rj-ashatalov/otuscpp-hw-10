@@ -1,10 +1,10 @@
 #include "Sequence.h"
-#include "Bulkmlt.h"
+#include "Bulkmt.h"
 #include <iostream>
 #include <ctime>
 
-Sequence::Sequence(Bulkmlt& bulkmlt)
-        : IInterpreterState(bulkmlt)
+Sequence::Sequence(Bulkmt& bulkmt)
+        : IInterpreterState(bulkmt)
 {
 
 }
@@ -13,7 +13,7 @@ void Sequence::Exec(std::string ctx)
 {
     if (ctx == "{")
     {
-        _bulkmlt.SetState<InfinitSequence>();
+        _bulkmt.SetState<InfinitSequence>();
         return;
     }
 
@@ -23,12 +23,12 @@ void Sequence::Exec(std::string ctx)
 
     if (_commands->expressions.size() == 1)
     {
-        _bulkmlt.eventFirstCommand.Dispatch(std::time(nullptr));
+        _bulkmt.eventFirstCommand.Dispatch(std::time(nullptr));
     }
 
-    if (_commands->expressions.size() >= static_cast<size_t>(_bulkmlt.commandBufCount))
+    if (_commands->expressions.size() >= static_cast<size_t>(_bulkmt.commandBufCount))
     {
-        _bulkmlt.SetState<Sequence>();
+        _bulkmt.SetState<Sequence>();
     }
 }
 
@@ -40,11 +40,11 @@ void Sequence::Initialize()
 
 void Sequence::Finalize()
 {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
+//    std::cout << __PRETTY_FUNCTION__ << std::endl;
     IInterpreterState::Finalize();
     if (_commands->expressions.size() > 0)
     {
-        _bulkmlt.eventSequenceComplete.Dispatch(_commands);
+        _bulkmt.eventSequenceComplete.Dispatch(_commands);
     }
 }
 

@@ -5,10 +5,12 @@
 #include <map>
 #include <typeindex>
 #include <queue>
+#include <mutex>
 #include <zconf.h>
 #include "Sequence.h"
 #include "InfinitSequence.h"
 #include "events/EventDispatcher.h"
+#include "utils/utils.h"
 
 
 class Sequence;
@@ -20,7 +22,7 @@ struct Metrics
     int blockCount = 0u;
 };
 
-class Bulkmlt
+class Bulkmt
 {
     private:
         std::map<std::type_index, std::shared_ptr<IInterpreterState>> _typeToInterpreter;
@@ -32,7 +34,7 @@ class Bulkmlt
         EventDispatcher<std::shared_ptr<Group>> eventSequenceComplete;
         EventDispatcher<time_t> eventFirstCommand;
 
-        Bulkmlt(int commandBufCount)
+        Bulkmt(int commandBufCount)
                 : commandBufCount(commandBufCount)
         {
             SetState<Sequence>();
@@ -41,7 +43,7 @@ class Bulkmlt
         template<typename T>
         void SetState()
         {
-            if(_currentState)
+            if (_currentState)
             {
                 _currentState->Finalize();
             }
@@ -50,9 +52,8 @@ class Bulkmlt
             auto it = _typeToInterpreter.find(typeIndex);
             if (it == _typeToInterpreter.end())
             {
-                std::tie(it, std::ignore) = _typeToInterpreter.emplace(std::piecewise_construct
-                        , std::make_tuple(typeIndex)
-                        , std::make_tuple(new T{*this}));
+                std::tie(it, std::ignore) = _typeToInterpreter.emplace(std::piecewise_construct, std::make_tuple(typeIndex), std::make_tuple(new T{
+                        *this}));
             }
             _currentState = it->second;
 
@@ -69,7 +70,10 @@ class Bulkmlt
 //            std::cout << __PRETTY_FUNCTION__ << std::endl;
             while (true)
             {
-                std::cout << "Waiting for input:" << std::endl;
+                {
+                    std::unique_lock<std::mutex> locker(Utils::lockPrint);
+                    std::cout << "Waiting for input:" << std::endl;
+                }
                 std::string command;
                 std::getline(std::cin, command);
                 if (std::cin.eof())
@@ -77,11 +81,17 @@ class Bulkmlt
                     _currentState->Finalize();
                     break;
                 }
-                std::cout << "Input is: " << command << " Processing... " << std::endl;
+                {
+                    std::unique_lock<std::mutex> locker(Utils::lockPrint);
+                    std::cout << "Input is: " << command << " Processing... " << std::endl;
+                }
                 _currentState->Exec(command);
                 mainMetrics.lineCount++;
             }
-            std::cout << "Input complete aborting" << std::endl;
+            {
+                std::unique_lock<std::mutex> locker(Utils::lockPrint);
+                std::cout << "Input complete aborting" << std::endl;
+            }
         };
 
         int commandBufCount;

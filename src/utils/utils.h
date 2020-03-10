@@ -5,9 +5,11 @@
 #include <sstream>
 #include <memory>
 #include <algorithm>
+#include <mutex>
 
 namespace Utils
 {
+    extern std::mutex lockPrint;
     template<typename T>
     std::string ToString(T value)
     {
